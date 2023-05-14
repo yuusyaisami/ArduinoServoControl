@@ -10,7 +10,7 @@ Servo LeftUpservo;          // Servoオブジェクトの宣言 左上サーボ
 const int ServoRD = 6;   // サーボモーターをデジタルピン6に
 const int ServoRU = 9;   // サーボモーターをデジタルピン9に
 const int ServoLD = 3;   // サーボモーターをデジタルピン3に
-const int ServoLU = 5;   // サーボモーターをデジタルピン6に
+const int ServoLU = 5;   // サーボモーターをデジタルピン5に
 const int SoundPin = 1000; //ワロタ
 #define trigPinR 12  // トリガーピンRをD8に
 #define echoPinR 13  // エコーピンRをD9に
@@ -55,6 +55,12 @@ void setup() {
 //input bluetoothのデータ
 // 1 : 操縦, 2 : 自動走行
  int speed = -30,olddata,SelectMode = 1,input;
+
+ int LeftUpSpeed = 5;
+ int LeftDownSpeed = 0;
+ int RightUpSpeed = 0;
+ int RightDownSpeed = 0;
+
  double distanceR,distanceL = 10;
 void loop() {
   
@@ -139,9 +145,13 @@ void MapAutomaticControl(){
     for(;;){
       
       NextDirection();
-      Serial.print("次のいくべき方向 : ");
-      Serial.println(CarDirections);
       ForwardControl("Forward");
+          Serial.print("車の位置 : ");
+    Serial.println(CarPosition);
+    Serial.print("車の座標x , y : ");
+    Serial.print(CarPx);
+    Serial.print(" , ");
+    Serial.println(CarPy);
       delay(400);
       for(;;){
         Serial.print("MoveModeは");
@@ -156,6 +166,7 @@ void MapAutomaticControl(){
         Serial.print("1マス移動しました");
         Serial.print(Timer);
         Timer = 0;
+        WhenStopControlAngle();
         Stop();
         break;
       }
@@ -163,9 +174,12 @@ void MapAutomaticControl(){
       delay(50);
       }
       if(Goal == 1){
-        Serial.print("現在目的地にいます...いるよね?");
+        Serial.println("現在目的地にいます...いるよね?");
         CarPosition = input;
-        Serial.print(CarPosition);
+        Serial.println(CarPx);
+        Serial.print(" , ");
+        Serial.println(CarPy);
+        Goal = 0 ;
         break;
       }
     }
@@ -176,46 +190,57 @@ void MapAutomaticControl(){
   }
   input = 0;
 }
+void WhenStopControlAngle(){
+  DistanceR();
+  if(distanceR < 3){
+    RightTurn(100);
+  }
+  DistanceL();
+  if(distanceL < 3){
+    LeftTurn(100);
+  }
+  
+}
 void RelativeControl(){
 String Direction = "Forward";
   DistanceR();
-  if(distanceR < 5.5){
+  if(distanceR < 4.5){
     Direction = "Left";
-    if(distanceR < 3.5){
+    if(distanceR < 2){
       Direction = "HighLeft";
     }
   }
   DistanceL();
-  if(distanceL < 6.5){
+  if(distanceL < 4.5){
     Direction = "Right";
-    if(distanceL < 3.5){
+    if(distanceL < 2){
       Direction = "HighRight";
     }
   }
-  Timer = Timer + 0.4;
+  Timer = Timer + 0.375;
   ForwardControl(Direction);
 }
 void AbsoluteControl(){
   String Direction = "Forward";
   DistanceR();
-  if(distanceR < 5.5){
+  if(distanceR < 4.5){
     Direction = "Left";
-    if(distanceR < 3.5){
+    if(distanceR < 2.5){
       Direction = "HighLeft";
     }
   }
   if(distanceR > 15){
-    Timer = Timer + 1.2;
+    Timer = Timer + 0.65;
   }
   DistanceL();
-  if(distanceL < 6.5){
+  if(distanceL < 5){
     Direction = "Right";
-    if(distanceL < 3.5){
+    if(distanceL < 2.5){
       Direction = "HighRight";
     }
   }
   if(distanceL > 15){
-    Timer = Timer + 1.2;
+    Timer = Timer + 0.65;
   }
   ForwardControl(Direction);
   
@@ -240,6 +265,7 @@ void NextDirection(){
     NextForwardDirection = 2;
     if(BestMap[CarPy][CarPx + 1] == 95){
       Goal = 1;
+      Serial.println("右方向に95あり");
     }
     if(BestMap[CarPy + 1][CarPx + 1] == 99 && BestMap[CarPy - 1][CarPx + 1] == 99){
       MoveMode = 1;
@@ -613,68 +639,85 @@ int col = sizeof(BestMap[0]) / sizeof(int);
 }
 void AutomaticControl(){
   String Direction = "Forward";
+  bool DistanceRon = false, DistanceLon = false;
   DistanceR();
-  if(distanceR < 5){
+  if(distanceR < 5.5){
     Direction = "Left";
     if(distanceR < 3){
       Direction = "HighLeft";
     }
   }
   DistanceL();
-  if(distanceL < 5){
+  if(distanceL < 5.5){
     Direction = "Right";
     if(distanceL < 3){
       Direction = "HighRight";
     }
   }
+  Serial.println(Direction);
   ForwardControl(Direction);
+  delay(1000);
 }
 void RightTurn(){
-  RightDownservo.write(95);
-  RightUpservo.write(95);
-  LeftDownservo.write(95);
-  LeftUpservo.write(95);
-  delay(2200);
+RightDownservo.write(100);
+  RightUpservo.write(100);
+  LeftDownservo.write(100);
+  LeftUpservo.write(100);
+  delay(2800);
+}
+void RightTurn(int Time){
+RightDownservo.write(105);
+  RightUpservo.write(105);
+  LeftDownservo.write(100);
+  LeftUpservo.write(100);
+  delay(Time);
 }
 void LeftTurn(){
-  RightDownservo.write(85);
-  RightUpservo.write(85);
-  LeftDownservo.write(85);
-  LeftUpservo.write(85);
-  delay(2000);
+  RightDownservo.write(80);
+  RightUpservo.write(80);
+  LeftDownservo.write(80);
+  LeftUpservo.write(80);
+   delay(1800);
+}
+void LeftTurn(int Time){
+  RightDownservo.write(80);
+  RightUpservo.write(80);
+  LeftDownservo.write(80);
+  LeftUpservo.write(80);
+   delay(Time);
 }
 void BackTurn(){
-  RightDownservo.write(95);
-  RightUpservo.write(95);
-  LeftDownservo.write(95);
-  LeftUpservo.write(95);
+  RightDownservo.write(100 + RightDownSpeed);
+  RightUpservo.write(100 + RightUpSpeed);
+  LeftDownservo.write(100 + LeftDownSpeed);
+  LeftUpservo.write(100 + LeftUpSpeed);
   delay(4000);
 }
 
 void ForwardControl(String direction){
   if(direction == "Left"){
-    RightDownservo.write(95);
-  RightUpservo.write(95);
-  LeftDownservo.write(88);
-  LeftUpservo.write(88);
+    RightDownservo.write(100 + RightDownSpeed);
+  RightUpservo.write(100 + RightUpSpeed);
+  LeftDownservo.write(85 + LeftDownSpeed);
+  LeftUpservo.write(85 + LeftUpSpeed);
   }
   if(direction == "Right"){
-    RightDownservo.write(92);
-  RightUpservo.write(92);
-  LeftDownservo.write(85);
-  LeftUpservo.write(85);
+    RightDownservo.write(95 + RightDownSpeed);
+  RightUpservo.write(95 + RightUpSpeed);
+  LeftDownservo.write(80 + LeftDownSpeed);
+  LeftUpservo.write(80 + LeftUpSpeed);
   }
   if(direction == "HighLeft"){
-    RightDownservo.write(95);
-  RightUpservo.write(95);
-  LeftDownservo.write(90);
-  LeftUpservo.write(90);
+    RightDownservo.write(100 + RightDownSpeed);
+  RightUpservo.write(100 + RightUpSpeed);
+  LeftDownservo.write(88 + LeftDownSpeed);
+  LeftUpservo.write(88 + LeftUpSpeed);
   }
   if(direction == "HighRight"){
-    RightDownservo.write(90);
-  RightUpservo.write(90);
-  LeftDownservo.write(85);
-  LeftUpservo.write(85);
+    RightDownservo.write(92 + RightDownSpeed);
+  RightUpservo.write(92 + RightUpSpeed);
+  LeftDownservo.write(80 + LeftDownSpeed);
+  LeftUpservo.write(80 + LeftUpSpeed);
   }
   if(direction == "Forward"){
     Forward();
@@ -775,10 +818,10 @@ void DistanceL(){
 
 
 void Forward(){
-  RightDownservo.write(95);
-  RightUpservo.write(95);
-  LeftDownservo.write(85);
-  LeftUpservo.write(85);
+  RightDownservo.write(100 + RightDownSpeed);
+  RightUpservo.write(100 + RightUpSpeed);
+  LeftDownservo.write(80 + LeftDownSpeed);
+  LeftUpservo.write(80 + LeftUpSpeed);
 }
 void Backward(int Speed){
   RightDownservo.write(50 - Speed);
@@ -787,44 +830,44 @@ void Backward(int Speed){
   LeftUpservo.write(130 + Speed);
 }
 void RightRotation(int Speed){
-  RightDownservo.write(132 - Speed);
+  RightDownservo.write(130 - Speed);
   RightUpservo.write(130 - Speed);
   LeftDownservo.write(130 + Speed);
-  LeftUpservo.write(132 + Speed);
+  LeftUpservo.write(130 + Speed);
 }
 void LeftRotation(int Speed){
-  RightDownservo.write(52 - Speed);
+  RightDownservo.write(50 - Speed);
   RightUpservo.write(50 - Speed);
   LeftDownservo.write(50 + Speed);
-  LeftUpservo.write(52 + Speed);
+  LeftUpservo.write(50 + Speed);
 }
 
 void ForwardRightFold(int Speed){
-  RightDownservo.write(92);
+  RightDownservo.write(90);
   RightUpservo.write(90);
   LeftDownservo.write(130 + Speed);
-  LeftUpservo.write(132 + Speed);
+  LeftUpservo.write(130 + Speed);
 }
 void ForwardLeftFold(int Speed){
   RightDownservo.write(50 - Speed);
   RightUpservo.write(50 - Speed);
   LeftDownservo.write(90);
-  LeftUpservo.write(92);
+  LeftUpservo.write(90);
 }
 void BackwardRightFold(int Speed){
-  RightDownservo.write(92);
+  RightDownservo.write(90);
   RightUpservo.write(90);
   LeftDownservo.write(50 - Speed);
-  LeftUpservo.write(52 - Speed);
+  LeftUpservo.write(50 - Speed);
 }
 void BackwardLeftFold(int Speed){
-  RightDownservo.write(132 + Speed);
+  RightDownservo.write(130 + Speed);
   RightUpservo.write(130 + Speed);
   LeftDownservo.write(90);
-  LeftUpservo.write(92);
+  LeftUpservo.write(90);
 }
 void Stop(){
-  RightDownservo.write(92);
+  RightDownservo.write(90);
   RightUpservo.write(90);
   LeftDownservo.write(90);
   LeftUpservo.write(92);
