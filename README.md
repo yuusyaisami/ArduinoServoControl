@@ -1,2 +1,3 @@
 # ArduinoServoControl
-Used in conjunction with SerialCommunicationTool
+アルディーノでの自動走行を作るときに作ったプログラムです
+大したことは書いてありません私のプロジェクトの一つである迷路の最短距離を求めるプログラムと、bluetoothシリアル通信を使った無線通信を使って自動走行を作っています。
