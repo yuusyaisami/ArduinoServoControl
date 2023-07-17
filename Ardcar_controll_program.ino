@@ -96,6 +96,8 @@ void loop() {
       case 1:
         AutomaticDrive(); //自動走行
         break;
+      case 2:
+        LinetracerDrive(); //ライントレース走行
     }
   }
 }
@@ -103,7 +105,9 @@ void loop() {
 void AutomaticDrive(){
   Serial.write("Automatic Controller起動");
       while(free){
+        Serial.println("どうしますか?");
         Serial.println("起動 : 1");
+        Serial.println("設定 : 2");
         BestMapClear();
         
         while(free){ //Automatic loop
@@ -111,6 +115,7 @@ void AutomaticDrive(){
             int ControllType = Bluetooth.read();
             switch(ControllType){
               case 1: //マップ移動操作
+                Serial.println("目的地を入力してください(x)");
                 int goal_x = WaitData();
                 Serial.print("x = ");
                 Serial.print(goal_x);
@@ -122,83 +127,229 @@ void AutomaticDrive(){
                   Serial.write("目的地はここです");
                   break;
                 }
+                else if(BestMap[goal_y][goal_x] == 999){
+                  Serial.write("目的地は外壁です");
+                  break;
+                }
                 BestMap[goal_y][goal_x] = 995; //目的地を設定
                 BestMap[car.y][car.x] = 1;
                 BestMapWaterFlushing();
                 BestMapOptimalRoute();
-                BestMap[car.y][car.x] = 1;
+                BestMap[car.y][car.x] = 0; //車の位置(スタート地点)
+                BestMap[goal_y][goal_x] = 990; //ゴール
                 int go_direction; //進む方向 (1 : そのまま   2 : 左に曲がる   3 : 後ろを向く   4 : 右に曲がる )
+                bool goal_flag = false;
                 for(int Count = 0; ;Count++){ //ゴミコード
                   switch(car.direction){
                   case 1:
                     if(BestMap[car.y - 1][car.x] == 990){
                       go_direction = 1;
+                      car.y--;
                     }
                     else if(BestMap[car.y][car.x - 1] == 990){
                       go_direction = 2;
+                      car.x--;
                     }
                     else if(BestMap[car.y + 1][car.x] == 990){
                       go_direction = 3;
+                      car.y++;
                     }
                     else if(BestMap[car.y][car.x + 1] == 990){
                       go_direction = 4;
+                      car.x++;
+                    }
+                    else{
+                      Serial.println("おそらく目的地はいまここだろう");
+                      goal_flag = true;
                     }
                     break;
                   case 2:
                     if(BestMap[car.y - 1][car.x] == 990){
                       go_direction = 4;
+                      car.y--;
                     }
                     else if(BestMap[car.y][car.x - 1] == 990){
                       go_direction = 1;
+                      car.x--;
                     }
                     else if(BestMap[car.y + 1][car.x] == 990){
                       go_direction = 2;
+                      car.y++;
                     }
                     else if(BestMap[car.y][car.x + 1] == 990){
                       go_direction = 3;
+                      car.x++;
+                    }
+                    else{
+                      Serial.println("おそらく目的地はいまここだろう");
+                      goal_flag = true;
                     }
                     break;
                   case 3:
                     if(BestMap[car.y - 1][car.x] == 990){
                       go_direction = 3;
+                      car.y--;
                     }
                     else if(BestMap[car.y][car.x - 1] == 990){
                       go_direction = 4;
+                      car.x--;
                     }
                     else if(BestMap[car.y + 1][car.x] == 990){
                       go_direction = 1;
+                      car.y++;
                     }
                     else if(BestMap[car.y][car.x + 1] == 990){
                       go_direction = 2;
+                      car.x++;
+                    }
+                    else{
+                      Serial.println("おそらく目的地はいまここだろう");
+                      goal_flag = true;
                     }
                     break;
                   case 4:
                     if(BestMap[car.y - 1][car.x] == 990){
                       go_direction = 2;
+                      car.y--;
                     }
                     else if(BestMap[car.y][car.x - 1] == 990){
                       go_direction = 3;
+                      car.x--;
                     }
                     else if(BestMap[car.y + 1][car.x] == 990){
                       go_direction = 4;
+                      car.y++;
                     }
                     else if(BestMap[car.y][car.x + 1] == 990){
                       go_direction = 1;
+                      car.x++;
                     }
+                    else{
+                      Serial.println("おそらく目的地はいまここだろう");
+                      goal_flag = true;
+                    }
+                    break;
+                  }
+                  if(goal_flag){
                     break;
                   }
                   switch(go_direction){
                     case 1: //そのまま
                       break;
                     case 2: //左に曲がる
+                      LeftTurn();
+                      delay(200);
+                      for(int i = 0;i < 80 ; i++){
+                        if(ReadCarLine(center_reflector_R) && ReadCarLine(center_reflector_L)){
+                          Serial.print("曲がり角です! time : ");
+                          Serial.print((i * 10 + 200) * 0.001);
+                          Serial.print("s");
+                          Serial.println();
+                          break;
+                        }
+                        delay(10);
+                      }
+                      Stop();
                       break;
                     case 3: //後ろ
+                      LeftTurn();
+                      delay(200);
+                      for(int i = 0;i < 80 ; i++){
+                        if(ReadCarLine(center_reflector_R) && ReadCarLine(center_reflector_L)){
+                          Serial.print("曲がり角です! time : ");
+                          Serial.print((i * 10 + 200) * 0.001);
+                          Serial.print("s");
+                          Serial.println();
+                          break;
+                        }
+                        delay(10);
+                      }
+                      LeftTurn();
+                      delay(200);
+                      for(int i = 0;i < 80 ; i++){
+                        if(ReadCarLine(center_reflector_R) && ReadCarLine(center_reflector_L)){
+                          Serial.print("曲がり角です! time : ");
+                          Serial.print((i * 10 + 200) * 0.001);
+                          Serial.print("s");
+                          Serial.println();
+                          break;
+                        }
+                        delay(10);
+                      }
+                      Stop();
                       break;
                     case 4: //右に曲がる
+                      RightTurn();
+                      delay(200);
+                      for(int i = 0; i < 80 ; i++){
+                        if(ReadCarLine(center_reflector_R) && ReadCarLine(center_reflector_L)){
+                          Serial.print("曲がり角です! time : ");
+                          Serial.print((i * 10 + 200) * 0.001);
+                          Serial.print("s");
+                          Serial.println();
+                          break;
+                        }
+                        delay(10);
+                      }
+                      Stop();
                       break;
-                  }   
+                  }
+                  car.direction = go_direction;
+                  //前進
+                  while(free){
+                    LinetracerDrive();
+                    if(ReadCarLine(side_reflector_R) && ReadCarLine(side_reflector_L)){
+                      break;
+                    }
+                  }
+                }
+                Serial.println("------------------------------結果--------------------------------");
+                Serial.print("car.x : "); Serial.print(car.x); Serial.println();
+                Serial.print("car.y : "); Serial.print(car.y); Serial.println();
+                Serial.print("car.d : "); Serial.print(car.direction); Serial.println();
+                Serial.println("------------------------------終了-------------------------------");
+                break; //ControllType から 抜ける
+              case 2:
+              while(free){
+                Serial.println("------------------------------設定---------------------------------");
+                Serial.print("car.x : "); Serial.print(car.x); Serial.println();
+                Serial.print("car.y : "); Serial.print(car.y); Serial.println();
+                Serial.print("car.d : "); Serial.print(car.direction); Serial.println();
+                Serial.println("-------------------------------------------------------------------");
+                Serial.println("何を変更しますか?");
+                Serial.println("car.x を変更するには 1"); 
+                Serial.println("car.y を変更するには 2"); 
+                Serial.println("car.d を変更するには 3"); 
+                Serial.println("終了するには 4"); 
+                
+                int recv_data = WaitData();
+                switch(recv_data){
+                  case 1: //car.x
+                    Serial.println("値を入力してください");
+                    recv_data = WaitData();
+                    car.x = recv_data;
+                   break;
+                  case 2: //car.y
+                    Serial.println("値を入力してください");
+                    recv_data = WaitData();
+                    car.y = recv_data;
+                   break;
+                  case 3:
+                    Serial.println("値を入力してください");
+                    recv_data = WaitData();
+                    car.direction = recv_data;
+                   break;
+                }
+                if(recv_data == 4){
+                  break;
                 }
               }
+                break;
+              }
+              Serial.println("どうしますか?");
+              Serial.println("稼働 : 1");
+              Serial.println("設定 : 2");
+              BestMapClear();
             }
           }
         }
@@ -263,6 +414,14 @@ void Backward(){
 void LeftTurn(){
   ServoR.write(90 + ServoSpeed);
   ServoL.write(90 + ServoSpeed);
+}
+void LeftForward(){
+  ServoR.write(90 + ServoSpeed);
+  ServoL.write(90);
+}
+void RightForward(){
+  ServoR.write(90);
+  ServoL.write(90 - ServoSpeed);
 }
 void RightTurn(){
   ServoR.write(90 - ServoSpeed);
@@ -409,6 +568,26 @@ void ManualDrive(int data){
       break;
   }
   Bluetooth.write("come");
+}
+void LinetracerDrive(){
+  if(ReadCarLine(center_reflector_R) && ReadCarLine(center_reflector_L)){
+    Forward();
+  }
+  else if(ReadCarLine(center_reflector_R)){
+    RightForward();
+  }
+  else if(ReadCarLine(center_reflector_L)){
+    LeftForward();
+  }
+  else if(ReadCarLine(side_reflector_R) && ReadCarLine(side_reflector_L) == false){
+    RightForward();
+  }
+  else if(ReadCarLine(side_reflector_R) == false && ReadCarLine(side_reflector_L)){
+    LeftForward();
+  }
+  else{
+    Forward();
+  }
 }
 class Ardcar{
   public:
