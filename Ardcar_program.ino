@@ -29,25 +29,25 @@ const int center_reflector_L = A3;
 const int color_black = 900;
 const int color_write = 950;
 
-int ServoSpeed = 5;
+int ServoSpeed = 6;
 
-int Map[7][7] = {
-  {999, 999, 999, 999, 999, 999, 999},
-  {999,   0,   0,   0,   0,   0, 999},
-  {999,   0, 999,   0, 999, 999, 999},
-  {999,   0,   0,   0,   0, 999, 999},
-  {999, 999,   0, 999,   0,   0,   0},
-  {999,   0,   0,   0,   0, 999, 999},
-  {999, 999, 999, 999, 999, 999, 999}
+int Map[7][10] = {
+  {999, 999, 999, 999, 999, 999, 999,999, 999, 999},
+  {999,   0,   0,   0,   0,   0,   0,  0,   0, 999},
+  {999,   0,   0,   0,   0,   0,   0,  0,   0, 999},
+  {999,   0,   0,   0,   0,   0,   0,  0,   0, 999},
+  {999,   0,   0,   0,   0,   0,   0,  0,   0, 999},
+  {999,   0,   0,   0,   0,   0,   0,  0,   0, 999},
+  {999, 999, 999, 999, 999, 999, 999,999, 999, 999}
 };
-int BestMap[7][7] = {
-  {999, 999, 999, 999, 999, 999, 999},
-  {999,   0,   0,   0,   0,   0, 999},//   1
-  {999,   0, 999,   0, 999, 999, 999},// 2   4
-  {999,   0,   0,   0,   0, 999, 999},//   3
-  {999, 999,   0, 999,   0,   0,   0},
-  {999,   0,   0,   0,   0, 999, 999},
-  {999, 999, 999, 999, 999, 999, 999}
+int BestMap[7][10] = {
+  {999, 999, 999, 999, 999, 999, 999,999, 999, 999},
+  {999,   0,   0,   0,   0,   0,   0,  0,   0, 999},
+  {999,   0,   0,   0,   0,   0,   0,  0,   0, 999},
+  {999,   0,   0,   0,   0,   0,   0,  0,   0, 999},
+  {999,   0,   0,   0,   0,   0,   0,  0,   0, 999},
+  {999,   0,   0,   0,   0,   0,   0,  0,   0, 999},
+  {999, 999, 999, 999, 999, 999, 999,999, 999, 999}
 };
 struct Car{
   int x = 1;
@@ -154,6 +154,7 @@ void AutomaticDrive(){
                 BestMapOptimalRoute();
                 BestMap[car.y][car.x] = 0; //車の位置(スタート地点)
                 BestMap[goal_y][goal_x] = 990; //ゴール
+                MapView();
                 int go_direction; //進む方向 (1 : そのまま   2 : 左に曲がる   3 : 後ろを向く   4 : 右に曲がる )
                 bool goal_flag = false;
                 for(int Count = 0; ;Count++){ //ゴミコード
@@ -183,18 +184,22 @@ void AutomaticDrive(){
                   case 2:
                     if(BestMap[car.y - 1][car.x] == 990){
                       go_direction = 4;
+                      car.direction = 1;
                       car.y--;
                     }
                     else if(BestMap[car.y][car.x - 1] == 990){
                       go_direction = 1;
+                      car.direction = 2;
                       car.x--;
                     }
                     else if(BestMap[car.y + 1][car.x] == 990){
                       go_direction = 2;
+                      car.direction = 3;
                       car.y++;
                     }
                     else if(BestMap[car.y][car.x + 1] == 990){
                       go_direction = 3;
+                      car.direction = 4;
                       car.x++;
                     }
                     else{
@@ -205,18 +210,22 @@ void AutomaticDrive(){
                   case 3:
                     if(BestMap[car.y - 1][car.x] == 990){
                       go_direction = 3;
+                      car.direction = 1;
                       car.y--;
                     }
                     else if(BestMap[car.y][car.x - 1] == 990){
                       go_direction = 4;
+                      car.direction = 2;
                       car.x--;
                     }
                     else if(BestMap[car.y + 1][car.x] == 990){
                       go_direction = 1;
+                      car.direction = 3;
                       car.y++;
                     }
                     else if(BestMap[car.y][car.x + 1] == 990){
                       go_direction = 2;
+                      car.direction = 4;
                       car.x++;
                     }
                     else{
@@ -227,18 +236,22 @@ void AutomaticDrive(){
                   case 4:
                     if(BestMap[car.y - 1][car.x] == 990){
                       go_direction = 2;
+                      car.direction = 1;
                       car.y--;
                     }
                     else if(BestMap[car.y][car.x - 1] == 990){
                       go_direction = 3;
+                      car.direction = 2;
                       car.x--;
                     }
                     else if(BestMap[car.y + 1][car.x] == 990){
                       go_direction = 4;
+                      car.direction = 3;
                       car.y++;
                     }
                     else if(BestMap[car.y][car.x + 1] == 990){
                       go_direction = 1;
+                      car.direction = 4;
                       car.x++;
                     }
                     else{
@@ -250,15 +263,18 @@ void AutomaticDrive(){
                   if(goal_flag){
                     break;
                   }
+                  Serial.println();
+                  Serial.print("進む方向は"); Serial.print(go_direction);
+                  Serial.println();
                   switch(go_direction){
                     case 1: //そのまま
                       
                       
                       break;
                     case 2: //左に曲がる
-                      LeftTurn();
-                      delay(200);
-                      for(int i = 0;i < 80 ; i++){
+                      RightTurn();
+                      delay(400);
+                      for(int i = 0;i < 100 ; i++){
                         if(ReadCarLine(center_reflector_R) && ReadCarLine(center_reflector_L)){
                           Serial.print("曲がり角です! time : ");
                           Serial.print((i * 10 + 200) * 0.001);
@@ -272,8 +288,8 @@ void AutomaticDrive(){
                       break;
                     case 3: //後ろ
                       LeftTurn();
-                      delay(200);
-                      for(int i = 0;i < 80 ; i++){
+                      delay(400);
+                      for(int i = 0;i < 100 ; i++){
                         if(ReadCarLine(center_reflector_R) && ReadCarLine(center_reflector_L)){
                           Serial.print("曲がり角です! time : ");
                           Serial.print((i * 10 + 200) * 0.001);
@@ -285,7 +301,7 @@ void AutomaticDrive(){
                       }
                       LeftTurn();
                       delay(200);
-                      for(int i = 0;i < 80 ; i++){
+                      for(int i = 0;i < 100 ; i++){
                         if(ReadCarLine(center_reflector_R) && ReadCarLine(center_reflector_L)){
                           Serial.print("曲がり角です! time : ");
                           Serial.print((i * 10 + 200) * 0.001);
@@ -298,9 +314,9 @@ void AutomaticDrive(){
                       Stop();
                       break;
                     case 4: //右に曲がる
-                      RightTurn();
-                      delay(200);
-                      for(int i = 0; i < 80 ; i++){
+                      LeftTurn();
+                      delay(400);
+                      for(int i = 0; i < 100 ; i++){
                         if(ReadCarLine(center_reflector_R) && ReadCarLine(center_reflector_L)){
                           Serial.print("曲がり角です! time : ");
                           Serial.print((i * 10 + 200) * 0.001);
@@ -313,12 +329,14 @@ void AutomaticDrive(){
                       Stop();
                       break;
                   }
-                  car.direction = go_direction;
+                  for(int count = 0; count < 10; count++){
+                    LinetracerDriveOnlyAutomaticDrive();
+                    delay(10);
+                  }
                   //前進
                   while(free){
-                    LinetracerDrive();
-                    if(ReadCarLine(side_reflector_R) && ReadCarLine(side_reflector_L)){
-                      delay(200);
+                    LinetracerDriveOnlyAutomaticDrive();
+                    if(ReadCarLine(side_reflector_R) == false && ReadCarLine(side_reflector_L) == false){
                       break;
                     }
                   }
@@ -328,6 +346,7 @@ void AutomaticDrive(){
                 Serial.print("car.y : "); Serial.print(car.y); Serial.println();
                 Serial.print("car.d : "); Serial.print(car.direction); Serial.println();
                 Serial.println("------------------------------終了-------------------------------");
+                Stop();
                 break; //ControllType から 抜ける
               case 2:
               while(free){
@@ -631,16 +650,20 @@ void LinetracerDrive(){
       Forward();
     }
     else if(ReadCarLine(center_reflector_R)){
-      RightForward();
+      //RightForward();
+      RightTurn();
     }
     else if(ReadCarLine(center_reflector_L)){
-      LeftForward();
+      //LeftForward();
+      LeftTurn();
     }
     else if(ReadCarLine(side_reflector_R) && ReadCarLine(side_reflector_L) == false){
-      RightForward();
+      //RightForward();
+      RightTurn();
     }
     else if(ReadCarLine(side_reflector_R) == false && ReadCarLine(side_reflector_L)){
-      LeftForward();
+      //LeftForward();
+      LeftTurn();
     }
     else{
       Forward();
@@ -651,6 +674,57 @@ void LinetracerDrive(){
       }
     }
   }
+}
+void LinetracerDriveOnlyAutomaticDrive(){
+    Serial.println();
+    Serial.print("side L : ");
+    Serial.print(ReadCarLine(side_reflector_L));
+    Serial.print("side R : ");
+    Serial.print(ReadCarLine(side_reflector_R));
+    Serial.print("center L : ");
+    Serial.print(ReadCarLine(center_reflector_L));
+    Serial.print("center R : ");
+    Serial.print(ReadCarLine(center_reflector_R));
+    if(ReadCarLine(center_reflector_R) && ReadCarLine(center_reflector_L)){
+      Forward();
+    }
+    else if(ReadCarLine(center_reflector_R)){
+      //RightForward();
+      RightTurn();
+    }
+    else if(ReadCarLine(center_reflector_L)){
+      //LeftForward();
+      LeftTurn();
+    }
+    else{
+      Forward();
+    }
+}
+void MapView(){
+  int row = sizeof(BestMap) / sizeof(BestMap[0]), col = sizeof(BestMap[0]) / sizeof(int);
+  Serial.println();
+  Serial.print("----------------Best Map---------------");Serial.println();
+  for(int j = 0; j < row; j++){
+    for(int i = 0; i < col; i++){
+      switch(BestMap[j][i]){
+        case 999:
+          Serial.print("#");
+          break;
+        case 990:
+          Serial.print("-");
+          break;
+        case 0:
+          Serial.print("S");
+          break;
+         default:
+          Serial.print(".");
+          break;
+      }
+    }
+    Serial.println();
+  }
+  Serial.print("------------------------------------------");
+  Serial.println();
 }
 class Ardcar{
   public:
